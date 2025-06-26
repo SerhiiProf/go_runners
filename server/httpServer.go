@@ -12,23 +12,26 @@ import (
 )
 
 type HttpServer struct {
-	config *viper.Viper
-
-	router *gin.Engine
-
+	config            *viper.Viper
+	router            *gin.Engine
 	runnersController *controllers.RunnersController
-
 	resultsController *controllers.ResultsController
+	usersController   *controllers.UsersController
 }
 
 func InitHttpServer(config *viper.Viper, dbHandler *sql.DB) HttpServer {
 
 	runnersRepository := repositories.NewRunnersRepository(dbHandler)
 	resultRepository := repositories.NewResultsRepository(dbHandler)
+	usersRepository := repositories.NewUsersRepository(dbHandler)
+
 	runnersService := services.NewRunnersService(runnersRepository, resultRepository)
 	resultsService := services.NewResultsService(runnersRepository, resultRepository)
+	usersService := services.NewUsersService(usersRepository)
+
 	runnersController := controllers.NewRunnersController(runnersService)
 	resultsController := controllers.NewResultsController(resultsService)
+	usersController := controllers.NewUsersController(usersService)
 
 	router := gin.Default()
 
@@ -39,12 +42,15 @@ func InitHttpServer(config *viper.Viper, dbHandler *sql.DB) HttpServer {
 	router.GET("/runner", runnersController.GetRunnersBatch)
 	router.POST("/result", resultsController.CreateResult)
 	router.DELETE("/result/:id", resultsController.DeleteResult)
+	router.POST("/login", usersController.Login)
+	router.POST("/logout", usersController.Logout)
 
 	return HttpServer{
 		config:            config,
 		router:            router,
 		runnersController: runnersController,
 		resultsController: resultsController,
+		usersController:   usersController,
 	}
 }
 
